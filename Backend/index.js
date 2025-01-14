@@ -25,7 +25,7 @@ const PORT = (process.env.PORT) || 5001;
 
 //api's 
 
-app.use("/api/users", userRoute);
+app.use("/api/user", userRoute);
 
 
 app.listen(PORT, () => {

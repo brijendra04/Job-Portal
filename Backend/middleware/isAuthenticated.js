@@ -2,25 +2,27 @@ import jwt from "jsonwebtoken";
 
 const authenticateToken = (req, res, next) => {
     try {
-        const token = req.cookies.token; 
+        const token = req.cookies.token;
+
         if (!token) {
+            console.error("Token not provided");
             return res.status(401).json({
-                message: "Unauthorized: No token provided",
+                message: "No token provided",
                 success: false,
             });
         }
 
-        // Verify the token
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        console.log("Decoded token:", decoded);
 
-       
-        req.id = decoded.userId; 
+        req.userId = decoded.userId;
+        console.log("Extracted userId:", req.userId);
 
-        next(); 
+        next();
     } catch (err) {
-        console.error(err);
-        res.status(401).json({
-            message: "Unauthorized: Invalid or expired token",
+        console.error("Error in authenticateToken middleware:", err);
+        return res.status(401).json({
+            message: "Invalid or expired token",
             success: false,
         });
     }

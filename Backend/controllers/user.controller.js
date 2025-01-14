@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 
 export const register = async (req, res) => {
     try {
-        const {fullname, email, phoneNumber, password, role } = req.body;
+        const { fullname, email, phoneNumber, password, role } = req.body;
         if (!fullname || !email || !phoneNumber || !password || !role) {
             return res.status(400).json({
                 message: "Missing fields required",
@@ -46,7 +46,7 @@ export const register = async (req, res) => {
 
 export const login = async (req, res) => {
     try {
-        const {email, password, role } = req.body;
+        const { email, password, role } = req.body;
         if (!email || !password || !role) {
             return res.status(400).json({
                 message: "Missing fields required",
@@ -129,35 +129,48 @@ export const logout = (req, res) => {
     }
 };
 
-export const updatePofile = async (req, res) => {
+export const updateProfile = async (req, res) => {
     try {
         const { fullname, email, phoneNumber, bio, skills } = req.body;
         const file = req.file;
-        if (!fullname || !email || !phoneNumber || !bio || !skills) {
-            return res.status(400).json({
-                message: "Missing fields required",
+
+        // Debugging: Log received userId
+        const userId = req.userId;
+        console.log("Received userId in updateProfile:", userId);
+
+        if (!userId) {
+            return res.status(401).json({
+                message: "Unauthorized: Missing userId",
                 success: false,
             });
         }
 
-        const skillsArray = skills.split(",").map((skill) => skill.trim());
-        const userId = req.userId;
         let user = await User.findById(userId);
         if (!user) {
+            console.error("No user found for userId:", userId);
             return res.status(404).json({
                 message: "User not found",
                 success: false,
             });
         }
 
-        user.fullname = fullname;
-        user.email = email;
-        user.phoneNumber = phoneNumber;
-        user.profile.bio = bio;
-        user.profile.skills = skillsArray;
+        // Split skills if provided
+        let skillsArray = [];
+        if (skills) {
+            skillsArray = skills.split(",");
+        }
+
+        // Update user fields
+        if (fullname) user.fullname = fullname;
+        if (email) user.email = email;
+        if (phoneNumber) user.phoneNumber = phoneNumber;
+        if (bio) user.profile.bio = bio;
+        if (skillsArray.length > 0) user.profile.skills = skillsArray;
+        if (file) user.profile.image = file.path;
+
         await user.save();
 
-        user = {
+        const updatedUser = {
             _id: user._id,
             fullname: user.fullname,
             email: user.email,
@@ -168,11 +181,11 @@ export const updatePofile = async (req, res) => {
 
         return res.status(200).json({
             message: "Profile updated successfully",
-            user,
+            user: updatedUser,
             success: true,
         });
     } catch (err) {
-        console.log(err);
+        console.error("Error in updateProfile:", err);
         res.status(500).json({
             message: "Server error updating profile",
             success: false,
